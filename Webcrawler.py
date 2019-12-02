@@ -1,3 +1,5 @@
+import time
+
 import requests
 import sqlite3 as sql
 import sys
@@ -27,6 +29,9 @@ class Conference:
             if len(info.split('-')) == 2:
                 self.start = datetime.strptime(info.split('-')[0].strip(), "%b %d, %Y")
                 self.end = datetime.strptime(info.split('-')[1].strip(), "%b %d, %Y")
+            else:
+                self.start = 'N/A'
+                self.end = 'N/A'
 
         elif self.where is None:
             self.where = info
@@ -48,54 +53,66 @@ def build_db():
     connection.execute("DROP TABLE IF EXISTS Events")
     connection.execute("CREATE TABLE Events(Event TEXT, Name TEXT, FirstDate DateTime, LastDate DateTime, Location TEXT, Deadline TEXT)");
 
-    r = requests.get('http://www.wikicfp.com/cfp/call?conference=computer%20science').text
+    parameters = {'page': '1'}
 
-    # print(r)
+    for page_num in range(1, 6):
 
-    soup = BeautifulSoup(r, 'lxml')
-    # print(soup.prettify())
+        if page_num != 1:
+            time.sleep(5)
 
-    # <table cellpadding="3" cellspacing="1" align="center" width="100%">
-    test = soup.find('table', {'cellpadding': '3', 'cellspacing': '1', 'align': 'center', 'width': '100%'})
+        parameters['page'] = page_num
+
+        r = requests.get('http://www.wikicfp.com/cfp/call?conference=computer%20science', params=parameters).text
+
+        # print(r)
+
+        soup = BeautifulSoup(r, 'lxml')
+        # print(soup.prettify())
+
+        # <table cellpadding="3" cellspacing="1" align="center" width="100%">
+        test = soup.find('table', {'cellpadding': '3', 'cellspacing': '1', 'align': 'center', 'width': '100%'})
 
 
-    data = test.find_all('td')
+        data = test.find_all('td')
 
-    # print(data)
+        # print(data)
 
-    remove_links = []
+        remove_links = []
 
-    cur_info = Conference()
+        cur_info = Conference()
 
-    iterator = 0
+        iterator = 0
 
-    for line in data:
+        for line in data:
 
-        if iterator < 4:
-            iterator += 1
-            continue
-
-        # if type(line.contents[0]) == NavigableString or type(line.contents[0]) == NavigableString:
-        content = line.contents[0]
-
-        if type(content) == Tag:
-
-            if len(content.contents) == 0:
+            if iterator < 4:
+                iterator += 1
                 continue
 
-            content = content.contents[0]
+            # if type(line.contents[0]) == NavigableString or type(line.contents[0]) == NavigableString:
+            content = line.contents[0]
 
-        cur_info.add_info(content)
+            if type(content) == Tag:
 
-        if (iterator - 3) % 5 == 0 and (iterator-4) != 0:
-            remove_links.append(cur_info)
+                if len(content.contents) == 0:
+                    continue
 
-            cur_info = Conference()
+                content = content.contents[0]
 
-        iterator += 1
+            cur_info.add_info(content)
 
-    for conf in remove_links:
-        connection.execute("INSERT INTO Events VALUES(?, ?, date(?), date(?), ?, ?)", (conf.event, conf.name, conf.start, conf.end, conf.where, conf.deadline))
+            if (iterator - 3) % 5 == 0 and (iterator-4) != 0:
+                remove_links.append(cur_info)
+
+                cur_info = Conference()
+
+            iterator += 1
+
+        for conf in remove_links:
+            connection.execute("INSERT INTO Events VALUES(?, ?, date(?), date(?), ?, ?)", (conf.event, conf.name, conf.start, conf.end, conf.where, conf.deadline))
+
+
+
     connection.commit()
 
 def print_all(): 
