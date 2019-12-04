@@ -1,3 +1,7 @@
+"""
+Basic web scraper that scrapes the WikiCFP conference calendar and pushes the data to a database
+"""
+
 import time
 
 import requests
@@ -145,7 +149,7 @@ def search(year, month):
     :param year: The year to search for
     :param month: The month to search for
     """
-    # Selects all events where the start date or end date fall within the givin year and month
+    # Selects all events where the start date or end date fall within the given year and month
     cursor.execute('SELECT * FROM Events WHERE '
                    'strftime(\'%Y-%m\', FirstDate) = ? OR strftime(\'%Y-%m\', LastDate) = ?',
                    (year + '-' + month, year + '-' + month))
