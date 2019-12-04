@@ -1,3 +1,4 @@
+#!/usr/bin/python3
 """
 Basic web scraper that scrapes the WikiCFP conference calendar and pushes the data to a database
 """
@@ -9,7 +10,6 @@ import sqlite3 as sql
 import sys
 from datetime import datetime
 from bs4 import BeautifulSoup, Tag
-
 
 class Conference:
     """
@@ -50,17 +50,6 @@ class Conference:
         elif self.deadline is None:  # If the event deadline is not set, sets it to the info
             self.deadline = info
 
-    @property
-    def __str__(self):
-        """
-        Sets the string representation of a conference
-        :return: The string representing the conference
-        """
-
-        # Returns a string that shows all fields from the conference class
-        return f'event = {self.event}\nname = {self.name}\nwhen = {self.start} - {self.end}\nwhere = {self.where}\n' \
-               f'deadline = {self.deadline}\n'
-
 
 # Connect to the database
 connection = sql.connect('events.db')
@@ -88,7 +77,7 @@ def build_db():
         # Uses the requests library to send a get request to retrieve the requested page of the calender
         r = requests.get('http://www.wikicfp.com/cfp/call?conference=computer%20science', params=parameters).text
 
-        soup = BeautifulSoup(r, 'lxml')  # Parses the webpage into lxml
+        soup = BeautifulSoup(r, 'html.parser')  # Parses the webpage into lxml
 
         # Finds the start of the calandar using its unique table attributes, as it does not have a tag
         test = soup.find('table', {'cellpadding': '3', 'cellspacing': '1', 'align': 'center', 'width': '100%'})
